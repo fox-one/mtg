@@ -6,6 +6,7 @@ import (
 	"github.com/fox-one/mixin-sdk-go"
 	"github.com/fox-one/mtg/core"
 	"github.com/fox-one/mtg/pkg/mtg"
+	"github.com/fox-one/mtg/service/asset"
 	"github.com/fox-one/mtg/service/wallet"
 )
 
@@ -52,6 +53,10 @@ func provideSystem() *core.System {
 		PrivateKey: privateKey,
 		SignKey:    signKey,
 	}
+}
+
+func provideAssetService(client *mixin.Client) core.AssetService {
+	return asset.New(client)
 }
 
 func provideWalletService(client *mixin.Client) core.WalletService {

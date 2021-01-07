@@ -14,21 +14,29 @@ import (
 const checkpointKey = "mtg_sync_checkpoint"
 
 func New(
+	assets core.AssetStore,
+	assetz core.AssetService,
 	wallets core.WalletStore,
 	walletz core.WalletService,
 	property property.Store,
 ) *Syncer {
 	return &Syncer{
+		assets:   assets,
+		assetz:   assetz,
 		wallets:  wallets,
 		walletz:  walletz,
 		property: property,
+		assetMap: map[string]bool{},
 	}
 }
 
 type Syncer struct {
+	assets   core.AssetStore
+	assetz   core.AssetService
 	wallets  core.WalletStore
 	walletz  core.WalletService
 	property property.Store
+	assetMap map[string]bool
 }
 
 func (w *Syncer) Run(ctx context.Context) error {
@@ -100,6 +108,17 @@ func (w *Syncer) run(ctx context.Context) error {
 
 	if len(outputs) == 0 {
 		return errors.New("EOF")
+	}
+
+	for _, output := range outputs {
+		if _, f := w.assetMap[output.AssetID]; f {
+			continue
+		}
+		if asset, err := w.assetz.Find(ctx, output.AssetID); err == nil {
+			if err := w.assets.Save(ctx, asset); err == nil {
+				w.assetMap[output.AssetID] = true
+			}
+		}
 	}
 
 	mixinet.SortOutputs(outputs)

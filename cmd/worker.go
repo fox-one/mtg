@@ -18,11 +18,13 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/fox-one/mtg/handler/hc"
 	"github.com/fox-one/mtg/notifier"
 	"github.com/fox-one/mtg/worker"
 	"github.com/fox-one/mtg/worker/cashier"
+	"github.com/fox-one/mtg/worker/pricesync"
 	"github.com/fox-one/mtg/worker/spentsync"
 	"github.com/fox-one/mtg/worker/syncer"
 	"github.com/fox-one/mtg/worker/txsender"
@@ -45,19 +47,25 @@ var workerCmd = &cobra.Command{
 		defer database.Close()
 		client := provideMixinClient()
 
+		property := providePropertyStore(database)
+		assets := provideAssetStore(database, time.Hour)
+		assetz := provideAssetService(client)
 		wallets := provideWalletStore(database)
 		walletz := provideWalletService(client)
-		property := providePropertyStore(database)
+		messages := provideMessageStore(database)
 		system := provideSystem()
 
-		// TODO notifier
 		notify := notifier.Mute()
+		if ok, _ := cmd.Flags().GetBool("notify"); ok {
+			notify = notifier.New(system, assets, messages)
+		}
 
 		workers := []worker.Worker{
 			txsender.New(wallets),
 			spentsync.New(wallets, notify),
 			cashier.New(wallets, walletz, system),
-			syncer.New(wallets, walletz, property),
+			syncer.New(assets, assetz, wallets, walletz, property),
+			pricesync.New(assets, assetz),
 		}
 
 		// worker api
