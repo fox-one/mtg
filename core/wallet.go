@@ -77,8 +77,8 @@ type (
 	WalletService interface {
 		// Pull fetch NEW Output updates
 		Pull(ctx context.Context, offset time.Time, limit int) ([]*Output, error)
-		// Consume spend multiple Output
-		Spent(ctx context.Context, outputs []*Output, transfer *Transfer) (*RawTransaction, error)
+		// Spend spend multiple Output
+		Spend(ctx context.Context, outputs []*Output, transfer *Transfer) (*RawTransaction, error)
 		// ReqTransfer generate payment code for multisig transfer
 		ReqTransfer(ctx context.Context, transfer *Transfer) (string, error)
 	}

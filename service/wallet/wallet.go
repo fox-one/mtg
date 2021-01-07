@@ -53,9 +53,9 @@ func (s *walletService) Pull(ctx context.Context, offset time.Time, limit int) (
 	return results, nil
 }
 
-// Spent 消费指定的 UTXO
+// Spend 消费指定的 UTXO
 // 如果 transfer 是 nil，则合并这些 UTXO
-func (s *walletService) Spent(ctx context.Context, outputs []*core.Output, transfer *core.Transfer) (*core.RawTransaction, error) {
+func (s *walletService) Spend(ctx context.Context, outputs []*core.Output, transfer *core.Transfer) (*core.RawTransaction, error) {
 	state, tx, err := s.signTransaction(ctx, outputs, transfer)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,6 @@ func (s *walletService) Spent(ctx context.Context, outputs []*core.Output, trans
 		if err := s.validateTransaction(tx, transfer); err != nil {
 			return nil, fmt.Errorf("validateTransaction failed: %w", err)
 		}
-
 	case mixin.UTXOStateSigned:
 		sig, err := s.client.CreateMultisig(ctx, mixin.MultisigActionSign, tx)
 		if err != nil {
@@ -109,6 +108,15 @@ func (s *walletService) Spent(ctx context.Context, outputs []*core.Output, trans
 
 		// 签名数量达到要求，返回 raw transaction，将异步提交到主网
 		if len(sig.Signers) >= int(sig.Threshold) {
+			tx, err := mixin.TransactionFromRaw(sig.RawTransaction)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(tx.Signatures) == 0 {
+				return nil, fmt.Errorf("generate raw transaction failed, invalid signatures")
+			}
+
 			return &core.RawTransaction{
 				TraceID: transfer.TraceID,
 				Data:    sig.RawTransaction,
@@ -147,7 +155,11 @@ func (s *walletService) signTransaction(ctx context.Context, outputs []*core.Out
 		return mixin.UTXOStateSpent, "", nil
 	}
 
-	input := &mixin.TransactionInput{Memo: transfer.Memo}
+	input := &mixin.TransactionInput{
+		Memo: transfer.Memo,
+		Hint: transfer.TraceID,
+	}
+
 	state := outputs[0].State
 	signedTx := outputs[0].UTXO.SignedTx
 	sum := decimal.Zero
@@ -243,7 +255,7 @@ func (s *walletService) validateTransaction(tx *mixin.Transaction, transfer *cor
 			if len(output.Keys) != len(transfer.Opponents) {
 				return errors.New("receivers not match")
 			}
-		case 1: // 检查找零
+		default: // 检查找零
 			if expect, got := mixin.NewThresholdScript(s.threshold).String(), output.Script.String(); expect != got {
 				return fmt.Errorf("first output script not matched, expect %s got %s", expect, got)
 			}
@@ -251,8 +263,6 @@ func (s *walletService) validateTransaction(tx *mixin.Transaction, transfer *cor
 			if len(output.Keys) != len(s.members) {
 				return errors.New("receivers not match")
 			}
-		default:
-			return errors.New("unexpected output")
 		}
 	}
 

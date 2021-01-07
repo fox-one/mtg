@@ -64,7 +64,8 @@ func (w *Cashier) run(ctx context.Context) error {
 		return errors.New("EOF")
 	}
 
-	for _, transfer := range transfers {
+	for idx := range transfers {
+		transfer := transfers[idx]
 		_ = w.handleTransfer(ctx, transfer)
 	}
 
@@ -112,7 +113,7 @@ func (w *Cashier) handleTransfer(ctx context.Context, transfer *core.Transfer) e
 				Memo:      fmt.Sprintf("merge for %s", transfer.TraceID),
 			}
 
-			return w.spent(ctx, outputs, merge)
+			return w.spend(ctx, outputs, merge)
 		}
 
 		err := errors.New("insufficient balance")
@@ -120,12 +121,12 @@ func (w *Cashier) handleTransfer(ctx context.Context, transfer *core.Transfer) e
 		return err
 	}
 
-	return w.spent(ctx, outputs, transfer)
+	return w.spend(ctx, outputs, transfer)
 }
 
-func (w *Cashier) spent(ctx context.Context, outputs []*core.Output, transfer *core.Transfer) error {
-	if tx, err := w.walletz.Spent(ctx, outputs, transfer); err != nil {
-		logger.FromContext(ctx).WithError(err).Errorln("walletz.Spent")
+func (w *Cashier) spend(ctx context.Context, outputs []*core.Output, transfer *core.Transfer) error {
+	if tx, err := w.walletz.Spend(ctx, outputs, transfer); err != nil {
+		logger.FromContext(ctx).WithError(err).Errorln("walletz.Spend")
 		return err
 	} else if tx != nil {
 		// 签名收集完成，需要提交至主网
@@ -137,7 +138,7 @@ func (w *Cashier) spent(ctx context.Context, outputs []*core.Output, transfer *c
 	}
 
 	if err := w.wallets.Spent(ctx, outputs, transfer); err != nil {
-		logger.FromContext(ctx).WithError(err).Errorln("wallets.Spent")
+		logger.FromContext(ctx).WithError(err).Errorln("wallets.Spend")
 		return err
 	}
 

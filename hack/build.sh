@@ -5,7 +5,7 @@ set -e
 TAG=${1:-dev}
 VERSION=$(git describe --tags)
 COMMIT=$(git rev-parse --short HEAD)
-BINARY=swap."${TAG}"
+BINARY=mtg."${TAG}"
 
 CONFIG=config."${TAG}".yaml
 if [ -f "${CONFIG}" ]; then

@@ -85,6 +85,10 @@ func (w *Sender) submitRawTransaction(ctx context.Context, raw string) error {
 	ctx = mixin.WithMixinNetHost(ctx, mixin.RandomMixinNetHost())
 
 	if tx, err := mixin.SendRawTransaction(ctx, raw); err != nil {
+		if mixin.IsErrorCodes(err, mixin.InvalidSignature) {
+			return nil
+		}
+
 		log.WithError(err).Errorln("SendRawTransaction failed")
 		return err
 	} else if tx.Snapshot != nil {

@@ -1,8 +1,8 @@
 package form
 
 import (
-	"github.com/fox-one/pkg/text/columnize"
 	"github.com/fox-one/mtg/core"
+	"github.com/fox-one/pkg/text/columnize"
 )
 
 func Assets(assets []*core.Asset) *columnize.Form {

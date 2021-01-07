@@ -5,7 +5,6 @@ import (
 
 	"github.com/fox-one/mtg/core"
 	"github.com/fox-one/mtg/store/asset"
-	"github.com/fox-one/mtg/store/proposal"
 	"github.com/fox-one/mtg/store/wallet"
 	"github.com/fox-one/pkg/property"
 	"github.com/fox-one/pkg/store/db"
@@ -31,8 +30,4 @@ func provideAssetStore(db *db.DB, exp time.Duration) core.AssetStore {
 
 func provideWalletStore(db *db.DB) core.WalletStore {
 	return wallet.New(db)
-}
-
-func provideProposalStore(db *db.DB) core.ProposalStore {
-	return proposal.New(db)
 }
