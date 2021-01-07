@@ -12,4 +12,4 @@ build-prod:
 	sh hack/build.sh prod
 
 clean:
-	rm -rf uniswap.*
+	rm -rf mtg.*
