@@ -2,6 +2,8 @@ package core
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
 	"time"
 
 	"github.com/fox-one/mixin-sdk-go"
@@ -11,6 +13,11 @@ import (
 )
 
 type (
+	MemoData struct {
+		Member string `json:"member,omitempty"`
+		Data   []byte `json:"data,omitempty"`
+	}
+
 	// Output represent Mixin Network multisig Outputs
 	Output struct {
 		ID        int64           `sql:"PRIMARY_KEY" json:"id,omitempty"`
@@ -20,7 +27,8 @@ type (
 		TraceID   string          `sql:"type:char(36)" json:"trace_id,omitempty"`
 		AssetID   string          `sql:"type:char(36)" json:"asset_id,omitempty"`
 		Amount    decimal.Decimal `sql:"type:decimal(64,8)" json:"amount,omitempty"`
-		Memo      string          `sql:"size:200" json:"memo,omitempty"`
+		Memo      string          `sql:"type:char(200)" json:"memo,omitempty"`
+		MemoData  *MemoData       `sql:"type:TEXT" json:"memo,omitempty"`
 		State     string          `sql:"size:24" json:"state,omitempty"`
 
 		// SpentBy represent the associated transfer trace id
@@ -83,3 +91,25 @@ type (
 		ReqTransfer(ctx context.Context, transfer *Transfer) (string, error)
 	}
 )
+
+// Scan implements the sql.Scanner interface for database deserialization.
+func (m *MemoData) Scan(value interface{}) error {
+	var d []byte
+	switch v := value.(type) {
+	case string:
+		d = []byte(v)
+	case []byte:
+		d = v
+	}
+	var memo MemoData
+	if err := json.Unmarshal(d, &memo); err != nil {
+		return err
+	}
+	*m = memo
+	return nil
+}
+
+// Value implements the driver.Valuer interface for database serialization.
+func (m MemoData) Value() (driver.Value, error) {
+	return json.Marshal(m)
+}

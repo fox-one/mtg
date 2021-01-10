@@ -64,7 +64,7 @@ var workerCmd = &cobra.Command{
 			txsender.New(wallets),
 			spentsync.New(wallets, notify),
 			cashier.New(wallets, walletz, system),
-			syncer.New(assets, assetz, wallets, walletz, property),
+			syncer.New(assets, assetz, wallets, walletz, property, system),
 			pricesync.New(assets, assetz),
 		}
 

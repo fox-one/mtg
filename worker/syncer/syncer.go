@@ -2,11 +2,13 @@ package syncer
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"time"
 
 	"github.com/fox-one/mtg/core"
 	"github.com/fox-one/mtg/internal/mixinet"
+	"github.com/fox-one/mtg/pkg/mtg"
 	"github.com/fox-one/pkg/logger"
 	"github.com/fox-one/pkg/property"
 )
@@ -19,6 +21,7 @@ func New(
 	wallets core.WalletStore,
 	walletz core.WalletService,
 	property property.Store,
+	system *core.System,
 ) *Syncer {
 	return &Syncer{
 		assets:   assets,
@@ -27,6 +30,7 @@ func New(
 		walletz:  walletz,
 		property: property,
 		assetMap: map[string]bool{},
+		system:   system,
 	}
 }
 
@@ -36,6 +40,7 @@ type Syncer struct {
 	wallets  core.WalletStore
 	walletz  core.WalletService
 	property property.Store
+	system   *core.System
 	assetMap map[string]bool
 }
 
@@ -111,12 +116,26 @@ func (w *Syncer) run(ctx context.Context) error {
 	}
 
 	for _, output := range outputs {
-		if _, f := w.assetMap[output.AssetID]; f {
-			continue
+		// save asset
+		if _, f := w.assetMap[output.AssetID]; !f {
+			if asset, err := w.assetz.Find(ctx, output.AssetID); err == nil {
+				if err := w.assets.Save(ctx, asset); err == nil {
+					w.assetMap[output.AssetID] = true
+				}
+			}
 		}
-		if asset, err := w.assetz.Find(ctx, output.AssetID); err == nil {
-			if err := w.assets.Save(ctx, asset); err == nil {
-				w.assetMap[output.AssetID] = true
+
+		// decrypt memo
+		if data := decodeMemo(output.Memo); len(data) > 0 {
+			if member, content, err := core.DecodeMemberAction(data, w.system.Members); err == nil {
+				output.MemoData = &core.MemoData{
+					Member: member.ClientID,
+					Data:   content,
+				}
+			} else if content, err := mtg.Decrypt(data, w.system.PrivateKey); err == nil {
+				output.MemoData = &core.MemoData{
+					Data: content,
+				}
 			}
 		}
 	}
@@ -133,4 +152,16 @@ func (w *Syncer) run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func decodeMemo(memo string) []byte {
+	if b, err := base64.StdEncoding.DecodeString(memo); err == nil {
+		return b
+	}
+
+	if b, err := base64.URLEncoding.DecodeString(memo); err == nil {
+		return b
+	}
+
+	return []byte(memo)
 }
