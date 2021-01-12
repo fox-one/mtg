@@ -14,8 +14,11 @@ import (
 
 type (
 	MemoData struct {
-		Member string `json:"member,omitempty"`
-		Data   []byte `json:"data,omitempty"`
+		Member   string `json:"member,omitempty"`
+		Type     int    `json:"type,omitempty"`
+		UserID   string `json:"user_id,omitempty"`
+		FollowID string `json:"follow_id,omitempty"`
+		Data     []byte `json:"data,omitempty"`
 	}
 
 	// Output represent Mixin Network multisig Outputs
@@ -28,7 +31,7 @@ type (
 		AssetID   string          `sql:"type:char(36)" json:"asset_id,omitempty"`
 		Amount    decimal.Decimal `sql:"type:decimal(64,8)" json:"amount,omitempty"`
 		Memo      string          `sql:"type:char(200)" json:"memo,omitempty"`
-		MemoData  *MemoData       `sql:"type:TEXT" json:"memo_data,omitempty"`
+		MemoData  MemoData        `sql:"type:TEXT" json:"memo_data,omitempty"`
 		State     string          `sql:"size:24" json:"state,omitempty"`
 
 		// SpentBy represent the associated transfer trace id

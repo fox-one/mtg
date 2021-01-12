@@ -11,6 +11,7 @@ import (
 	"github.com/fox-one/mtg/pkg/mtg"
 	"github.com/fox-one/pkg/logger"
 	"github.com/fox-one/pkg/property"
+	"github.com/gofrs/uuid"
 )
 
 const checkpointKey = "mtg_sync_checkpoint"
@@ -128,13 +129,21 @@ func (w *Syncer) run(ctx context.Context) error {
 		// decrypt memo
 		if data := decodeMemo(output.Memo); len(data) > 0 {
 			if member, content, err := core.DecodeMemberAction(data, w.system.Members); err == nil {
-				output.MemoData = &core.MemoData{
-					Member: member.ClientID,
-					Data:   content,
-				}
+				output.MemoData.Member, output.MemoData.Data = member.ClientID, content
 			} else if content, err := mtg.Decrypt(data, w.system.PrivateKey); err == nil {
-				output.MemoData = &core.MemoData{
-					Data: content,
+				var (
+					typ      int
+					userID   uuid.UUID
+					followID uuid.UUID
+				)
+
+				if left, err := mtg.Scan(content, &typ, &userID, &followID); err == nil {
+					output.MemoData.Type = typ
+					output.MemoData.UserID = userID.String()
+					output.MemoData.FollowID = followID.String()
+					output.MemoData.Data = left
+				} else {
+					output.MemoData.Data = content
 				}
 			}
 		}
