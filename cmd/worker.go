@@ -108,4 +108,5 @@ var workerCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(workerCmd)
 	workerCmd.Flags().Int("port", 9245, "worker api port")
+	workerCmd.Flags().Bool("notify", false, "notify")
 }
