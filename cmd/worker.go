@@ -91,7 +91,7 @@ var workerCmd = &cobra.Command{
 
 		cmd.Printf("mtg worker with version %q launched!\n", rootCmd.Version)
 
-		var g errgroup.Group
+		g, ctx := errgroup.WithContext(ctx)
 		for idx := range workers {
 			w := workers[idx]
 			g.Go(func() error {
