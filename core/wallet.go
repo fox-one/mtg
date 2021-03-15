@@ -13,6 +13,7 @@ import (
 )
 
 type (
+	// TODO Deprecated, remove in the future version
 	MemoData struct {
 		Member   string `json:"member,omitempty"`
 		Type     int    `json:"type,omitempty"`
