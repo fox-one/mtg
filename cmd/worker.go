@@ -29,6 +29,7 @@ import (
 	"github.com/fox-one/mtg/worker/syncer"
 	"github.com/fox-one/mtg/worker/txsender"
 	"github.com/fox-one/pkg/logger"
+	"github.com/fox-one/pkg/store/db"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
@@ -45,8 +46,12 @@ var workerCmd = &cobra.Command{
 		cfg.DB.ReadHost = ""
 		database := provideDatabase()
 		defer database.Close()
-		client := provideMixinClient()
+		// migrate db tables
+		if err := db.Migrate(database); err != nil {
+			panic(err)
+		}
 
+		client := provideMixinClient()
 		property := providePropertyStore(database)
 		assets := provideAssetStore(database, time.Hour)
 		assetz := provideAssetService(client)
