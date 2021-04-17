@@ -61,6 +61,18 @@ func (s *walletService) Spend(ctx context.Context, outputs []*core.Output, trans
 		return nil, err
 	}
 
+	// verify transfer receivers
+	if state != mixin.UTXOStateUnspent {
+		if _, err := s.client.BatchReadGhostKeys(ctx, []*mixin.GhostInput{
+			{
+				Receivers: transfer.Opponents,
+				Index:     0,
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	switch state {
 	case mixin.UTXOStateSpent:
 		// 已经付款出去了，说明 m 节点里面有 n 个节点签名，Output 已经全部花出去了。此处做简单验证:
