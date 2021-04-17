@@ -13,7 +13,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/builds/mtg .
+COPY --from=builder /app/builds/mtg.prod mtg
 
 EXPOSE 7222
 

@@ -5,7 +5,7 @@ set -e
 TAG=${1:-dev}
 VERSION=$(git describe --tags --abbrev=0)
 COMMIT=$(git rev-parse --short HEAD)
-BINARY=mtg
+BINARY=mtg."${TAG}"
 
 CONFIG=config."${TAG}".yaml
 if [ -f "${CONFIG}" ]; then
@@ -17,8 +17,12 @@ if [ -f "${CONFIG}" ]; then
   config-gen --config "${CONFIG}" --tag "${TAG}"
 fi
 
+export GOOS=linux
+export GOARCH=amd64
+export CGO_ENABLED=0
+
 echo "build ${BINARY} with version ${VERSION} & commit ${COMMIT}"
-CGO_ENABLED=1 go build -a \
+go build -a \
          --tags "${TAG}" \
          --ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
          -o builds/${BINARY}
