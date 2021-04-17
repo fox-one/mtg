@@ -127,6 +127,15 @@ func (w *Cashier) handleTransfer(ctx context.Context, transfer *core.Transfer) e
 func (w *Cashier) spend(ctx context.Context, outputs []*core.Output, transfer *core.Transfer) error {
 	if tx, err := w.walletz.Spend(ctx, outputs, transfer); err != nil {
 		logger.FromContext(ctx).WithError(err).Errorln("walletz.Spend")
+		if e, ok := err.(*mixin.Error); ok && e.Code == mixin.InvalidReceivers {
+			transfer.Handled = true
+			transfer.Passed = true
+			if err := w.wallets.Spent(ctx, nil, transfer); err != nil {
+				logger.FromContext(ctx).WithError(err).Errorln("wallets.Spend")
+				return err
+			}
+			return nil
+		}
 		return err
 	} else if tx != nil {
 		// 签名收集完成，需要提交至主网
