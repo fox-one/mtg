@@ -28,6 +28,7 @@ type (
 		CreatedAt time.Time       `json:"created_at,omitempty"`
 		UpdatedAt time.Time       `json:"updated_at,omitempty"`
 		Version   int64           `sql:"NOT NULL" json:"version,omitempty"`
+		Sender    string          `sql:"type:char(36)" json:"sender,omitempty"`
 		TraceID   string          `sql:"type:char(36)" json:"trace_id,omitempty"`
 		AssetID   string          `sql:"type:char(36)" json:"asset_id,omitempty"`
 		Amount    decimal.Decimal `sql:"type:decimal(64,8)" json:"amount,omitempty"`
